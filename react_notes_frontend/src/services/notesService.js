@@ -22,8 +22,10 @@ export const flags = {
 };
 
 // Storage Strategy
-const supabase = getSupabaseClient();
-const isOnline = !!supabase;
+// Avoid caching Supabase client at module load so tests and runtime env changes are respected.
+function getClient() {
+  return getSupabaseClient();
+}
 
 /**
  * sanitizeContent - trims and constrains content to maxLength; avoids HTML injection.
@@ -49,6 +51,8 @@ function toNote(item) {
  * If Supabase is available, loads from 'notes' table. Otherwise, localStorage.
  */
 export async function fetchNotes() {
+  const supabase = getClient();
+  const isOnline = !!supabase;
   if (isOnline) {
     try {
       const { data, error } = await supabase
@@ -92,6 +96,8 @@ export async function addNote(content) {
     throw err;
   }
 
+  const supabase = getClient();
+  const isOnline = !!supabase;
   if (isOnline) {
     try {
       const { data, error } = await supabase
@@ -137,6 +143,8 @@ function addNoteLocal(sanitized) {
 export async function deleteNote(id) {
   if (!id) return;
 
+  const supabase = getClient();
+  const isOnline = !!supabase;
   if (isOnline) {
     try {
       const { error } = await supabase.from('notes').delete().eq('id', id);
@@ -171,5 +179,6 @@ function cryptoRandomId() {
 
 // PUBLIC_INTERFACE
 export function isSupabaseEnabled() {
-  return isOnline;
+  const supabase = getClient();
+  return !!supabase;
 }
